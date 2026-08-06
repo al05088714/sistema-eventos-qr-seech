@@ -1,0 +1,531 @@
+﻿@{
+    ViewData["Title"] = "Congreso de Educación";
+}
+
+<!-- Hojas de estilo y dependencias (FontAwesome 6, SweetAlert2, QRious) -->
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<style>
+    body, h1, h2, h3, h4, h5, h6 { font-family: "Segoe UI", Arial, sans-serif; }
+    .w3-theme-d4 { background-color: #1a365d !important; color: #fff !important; }
+    .w3-theme-l5 { background-color: #f7fafc !important; }
+    .table-responsive { overflow-x: auto; }
+</style>
+
+<div class="w3-container w3-content" style="max-width:1400px; margin-top:20px;">
+    <!-- Encabezado -->
+    <div class="w3-row-padding w3-margin-bottom">
+        <div class="w3-col m8 s12">
+            <h4 class="w3-text-dark-grey w3-weight-semibold">
+                <i class="fa-solid fa-calendar-days w3-text-blue w3-margin-right"></i>Congreso de Educación
+            </h4>
+        </div>
+        <div class="w3-col m4 s12 w3-right-align" style="padding-top: 15px;">
+            <button onclick="abrirModalNuevo()" class="w3-button w3-green w3-round w3-small w3-card w3-hover-medium-green">
+                <i class="fa-solid fa-plus w3-margin-right"></i>Nueva Actividad
+            </button>
+        </div>
+    </div>
+
+    <!-- Indicadores / Stats -->
+    <div class="w3-row-padding w3-margin-bottom">
+        <div class="w3-col l3 m6 s12">
+            <div class="w3-container w3-white w3-card w3-round w3-padding-4">
+                <div class="w3-left w3-margin-top"><i class="fa-solid fa-chalkboard-user w3-xxxlarge w3-text-indigo"></i></div>
+                <div class="w3-right w3-margin-top"><h3 id="statEventos">...</h3></div>
+                <div class="w3-clear"></div>
+                <h6>Total Eventos</h6>
+            </div>
+        </div>
+        <div class="w3-col l3 m6 s12">
+            <div class="w3-container w3-white w3-card w3-round w3-padding-4">
+                <div class="w3-left w3-margin-top"><i class="fa-solid fa-users w3-xxxlarge w3-text-teal"></i></div>
+                <div class="w3-right w3-margin-top"><h3 id="statAforo">...</h3></div>
+                <div class="w3-clear"></div>
+                <h6>Aforo Total</h6>
+            </div>
+        </div>
+        <div class="w3-col l3 m6 s12">
+            <div class="w3-container w3-white w3-card w3-round w3-padding-4">
+                <div class="w3-left w3-margin-top"><i class="fa-solid fa-user-check w3-xxxlarge w3-text-green"></i></div>
+                <div class="w3-right w3-margin-top"><h3 id="statRegistrados">...</h3></div>
+                <div class="w3-clear"></div>
+                <h6>Pre-registrados</h6>
+            </div>
+        </div>
+        <div class="w3-col l3 m6 s12">
+            <div class="w3-container w3-white w3-card w3-round w3-padding-4">
+                <div class="w3-left w3-margin-top"><i class="fa-solid fa-building-flag w3-xxxlarge w3-text-orange"></i></div>
+                <div class="w3-right w3-margin-top"><h3 id="statSedes">...</h3></div>
+                <div class="w3-clear"></div>
+                <h6>Sedes Activas</h6>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Tabla -->
+    <div class="w3-div w3-white w3-card w3-round w3-margin-bottom">
+        <div class="w3-container w3-padding-16 w3-light-grey w3-round-top">
+            <div class="w3-row-padding">
+                <div class="w3-col l4 m12 s12 w3-margin-bottom">
+                    <div class="w3-display-container">
+                        <input id="txtBuscar" class="w3-input w3-border w3-round w3-white" type="text" placeholder="Buscar por actividad, ponente o código...">
+                        <span class="w3-display-right w3-margin-right w3-text-gray"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    </div>
+                </div>
+                <div class="w3-col l2 m3 s12 w3-margin-bottom">
+                    <select id="cboSede" class="w3-select w3-border w3-round w3-white">
+                        <option value="">Todas las Sedes</option>
+                    </select>
+                </div>
+                <div class="w3-col l2 m3 s12 w3-margin-bottom">
+                    <select id="cboNivel" class="w3-select w3-border w3-round w3-white">
+                        <option value="">Todos los Niveles</option>
+                    </select>
+                </div>
+                <div class="w3-col l2 m3 s12 w3-margin-bottom">
+                    <select id="cboActividad" class="w3-select w3-border w3-round w3-white">
+                        <option value="">Todos los Formatos</option>
+                    </select>
+                </div>
+                <div class="w3-col l2 m3 s12 w3-margin-bottom">
+                    <select id="cboRegion" class="w3-select w3-border w3-round w3-white">
+                        <option value="">Todas las Regiones</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="w3-container w3-padding-large table-responsive">
+            <table class="w3-table-all w3-hoverable w3-centered" id="tablaEventosAdmin">
+                <thead>
+                    <tr class="w3-theme-d4" style="user-select: none;">
+                        <th>Código</th>
+                        <th class="w3-left-align">Actividad / Tema</th>
+                        <th>Ponente</th>
+                        <th>Sede / Lugar</th>
+                        <th>Horario</th>
+                        <th style="width:15%;">Aforo / Ocupación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaEventos"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Formulario Evento -->
+<div id="modalEvento" class="w3-modal">
+    <div class="w3-modal-content w3-card-4 w3-animate-zoom w3-round" style="max-width:900px;">
+        <header class="w3-container w3-theme-d4 w3-round-top"> 
+            <span onclick="cerrarModalEvento()" class="w3-button w3-display-topright w3-round-top-right">&times;</span>
+            <h4><i class="fa-solid fa-pen-to-square w3-margin-right"></i>Detalles de la Actividad</h4>
+        </header>
+        <form id="formEvento" class="w3-container w3-padding-large w3-white">
+            <input type="hidden" id="idactividad" name="IdActividad" value="0">              
+            <div class="w3-row-padding">
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Código Actividad</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Codigo" maxlength="5" required placeholder="Ej. EV001">
+                </div>
+                <div class="w3-col m4 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Región del Evento</b></label>
+                    <select class="w3-select w3-border w3-round" name="CveArc" id="cbRegion" required>
+                        <option value="01" selected>01 - Chihuahua</option>
+                        <option value="02">02 - Juárez</option>
+                        <option value="03">03 - Cuauhtémoc</option>
+                        <option value="04">04 - Delicias</option>
+                        <option value="05">05 - Parral</option>
+                        <option value="06">06 - Nuevo Casas Grandes</option>
+                        <option value="07">07 - Creel</option>
+                        <option value="08">08 - Guachochi</option>
+                        <option value="09">09 - Guadalupe y Calvo</option>
+                        <option value="10">10 - Ojinaga</option>
+                        <option value="11">11 - Madera</option>
+                    </select>
+                </div>                   
+                <div class="w3-col m5 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Tipo de Actividad / Formato</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Actividad" id="txtModalActividad" required placeholder="Ej. Taller, Conferencia...">
+                </div>                    
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m12 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Nombre de la Actividad / Tema</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Nombre" maxlength="300" required>
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m5 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Ponente / Expositor</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Ponente" maxlength="150" required>
+                </div>
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Aforo Máximo</b></label>
+                    <input class="w3-input w3-border w3-round" type="number" name="Aforo" required placeholder="Ej. 50">
+                </div>
+                <div class="w3-col m4 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Duración</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Duracion" maxlength="50" placeholder="Ej. 2 horas">
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m4 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Subsistema</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Subsistema" maxlength="50" placeholder="Ej. Estatal / Federalizado">
+                </div>
+                <div class="w3-col m4 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Nivel Educativo Destinado</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Nivel" id="txtModalNivel" required placeholder="Primaria, Secundaria...">
+                </div>
+                <div class="w3-col m4 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Modalidad</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Modalidad" maxlength="50" placeholder="Ej. Presencial">
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m5 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Lugar Específico (Aula/Auditorio)</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Lugar" maxlength="150" required placeholder="Ej. Sala Audiovisual A">
+                </div>
+                <div class="w3-col m7 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Domicilio de la Sede</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Domicilio" maxlength="200" placeholder="Ej. Av. Tecnológico #1200">
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Fecha</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Fecha" placeholder="AAAA-MM-DD" maxlength="10" required>
+                </div>
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Horario</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Hora" placeholder="Ej. 09:00 - 11:00" maxlength="50" required>
+                </div>
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Federal</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Federal" maxlength="50">
+                </div>
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Estatal</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Estatal" maxlength="3">
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m3 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>No. Integrantes Staff</b></label>
+                    <input class="w3-input w3-border w3-round" type="number" name="Staff" placeholder="Ej. 4">
+                </div>
+                <div class="w3-col m9 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Responsable del Staff encargado</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="ResponsableStaff" maxlength="100">
+                </div>
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-col m12 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Materiales Requeridos</b></label>
+                    <input class="w3-input w3-border w3-round" type="text" name="Materiales" maxlength="200">
+                </div>
+                <div class="w3-col m12 s12 w3-margin-bottom">
+                    <label class="w3-text-dark-gray"><b>Curriculum del Ponente</b></label>
+                    <textarea class="w3-input w3-border w3-round" name="Curriculum" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="w3-row-padding w3-margin-top w3-hr">
+                <div class="w3-col s12 w3-right-align">
+                    <button type="button" onclick="cerrarModalEvento()" class="w3-button w3-border w3-round w3-margin-right">Cancelar</button>
+                    <button type="submit" class="w3-button w3-theme-d4 w3-round"><i class="fa-solid fa-floppy-disk w3-margin-right"></i>Guardar Actividad</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal QR -->
+<div id="modalQR" class="w3-modal">
+    <div class="w3-modal-content w3-card-4 w3-animate-zoom w3-round w3-center" style="max-width:400px;">
+        <header class="w3-container w3-theme-d4 w3-round-top"> 
+            <span onclick="document.getElementById('modalQR').style.display='none'" class="w3-button w3-display-topright w3-round-top-right">&times;</span>
+            <h4><i class="fa-solid fa-qrcode w3-margin-right"></i>Código QR del Evento</h4>
+        </header>
+        <div class="w3-container w3-padding-24 w3-white">
+            <h5 id="qrTituloEvento" class="w3-weight-bold w3-text-dark-gray" style="margin-bottom:20px;">Actividad</h5>
+            <div class="w3-padding">
+                <canvas id="qrCanvas"></canvas>
+            </div>
+            <p class="w3-small w3-text-gray w3-margin-top"><i class="fa-solid fa-mobile-screen-button w3-margin-right"></i>Escanea para registrar participación</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let listaEventosGlobal = [];
+
+    const nombresRegiones = {
+        "01": "01 - Chihuahua",
+        "02": "02 - Juárez",
+        "03": "03 - Cuauhtémoc",
+        "04": "04 - Delicias",
+        "05": "05 - Parral",
+        "06": "06 - Nuevo Casas Grandes",
+        "07": "07 - Creel",
+        "08": "08 - Guachochi",
+        "09": "09 - Guadalupe y Calvo",
+        "10": "10 - Ojinaga",
+        "11": "11 - Madera"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        cargarEventos();
+        document.getElementById("txtBuscar").addEventListener("input", filtrarTabla);
+        document.getElementById("cboSede").addEventListener("change", filtrarTabla);
+        document.getElementById("cboNivel").addEventListener("change", filtrarTabla);
+        document.getElementById("cboActividad").addEventListener("change", filtrarTabla);
+        document.getElementById("cboRegion").addEventListener("change", filtrarTabla);
+    });
+
+    function cargarEventos() {
+        const tbody = document.getElementById("tablaEventos");
+        tbody.innerHTML = `<tr><td colspan="7" class="w3-padding-large w3-text-gray"><i class="fa-solid fa-spinner fa-spin w3-margin-right"></i>Cargando datos...</td></tr>`;
+
+        fetch('/Actividades/Listar')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("statEventos").innerText = data.stats.totalEventos;
+                document.getElementById("statAforo").innerText = data.stats.aforoTotal.toLocaleString();
+                document.getElementById("statRegistrados").innerText = data.stats.totalRegistrados.toLocaleString();
+                document.getElementById("statSedes").innerText = data.stats.sedesActivas;
+
+                listaEventosGlobal = data.eventos;
+
+                // Poblamos los combos de filtro dinámicamente con la data obtenida
+                poblarFiltrosDinamicos(listaEventosGlobal);
+
+                renderizarTabla(listaEventosGlobal);
+            })
+            .catch(err => {
+                console.error("Error al cargar:", err);
+                tbody.innerHTML = `<tr><td colspan="7" class="w3-padding-large w3-red"><i class="fa-solid fa-triangle-exclamation w3-margin-right"></i>Error al cargar las actividades.</td></tr>`;
+            });
+    }
+
+    function poblarFiltrosDinamicos(eventos) {
+        const cboSede = document.getElementById("cboSede");
+        const cboNivel = document.getElementById("cboNivel");
+        const cboActividad = document.getElementById("cboActividad");
+        const cboRegion = document.getElementById("cboRegion");
+
+        // Guardar valores previstos para mantener la selección al recargar
+        const sedePrevia = cboSede.value;
+        const nivelPrevio = cboNivel.value;
+        const actividadPrevia = cboActividad.value;
+        const regionPrevia = cboRegion.value;
+
+        // Limpiar opciones previas
+        cboSede.innerHTML = '<option value="">Todas las Sedes</option>';
+        cboNivel.innerHTML = '<option value="">Todos los Niveles</option>';
+        cboActividad.innerHTML = '<option value="">Todos los Formatos</option>';
+        cboRegion.innerHTML = '<option value="">Todas las Regiones</option>';
+
+        const sedesUnicas = new Set();
+        const nivelesUnicos = new Set();
+        const formatosUnicos = new Set();
+        const regionesUnicas = new Set();
+
+        eventos.forEach(ev => {
+            if (ev.lugar && ev.lugar.trim() !== "") sedesUnicas.add(ev.lugar.trim());
+            if (ev.nivel && ev.nivel.trim() !== "") nivelesUnicos.add(ev.nivel.trim());
+            if (ev.actividad && ev.actividad.trim() !== "") formatosUnicos.add(ev.actividad.trim());
+            if (ev.cvearc && ev.cvearc.trim() !== "") regionesUnicas.add(ev.cvearc.trim());
+        });
+
+        Array.from(sedesUnicas).sort().forEach(s => {
+            const opt = document.createElement("option"); opt.value = s; opt.textContent = s; cboSede.appendChild(opt);
+        });
+        Array.from(nivelesUnicos).sort().forEach(n => {
+            const opt = document.createElement("option"); opt.value = n; opt.textContent = n; cboNivel.appendChild(opt);
+        });
+        Array.from(formatosUnicos).sort().forEach(f => {
+            const opt = document.createElement("option"); opt.value = f; opt.textContent = f; cboActividad.appendChild(opt);
+        });
+        Array.from(regionesUnicas).sort().forEach(r => {
+            const opt = document.createElement("option"); opt.value = r;
+            opt.textContent = nombresRegiones[r] ? nombresRegiones[r] : `Región ${r}`;
+            cboRegion.appendChild(opt);
+        });
+
+        // Restaurar selección si aún existe
+        cboSede.value = sedePrevia;
+        cboNivel.value = nivelPrevio;
+        cboActividad.value = actividadPrevia;
+        cboRegion.value = regionPrevia;
+    }
+
+    function renderizarTabla(eventos) {
+        const tbody = document.getElementById("tablaEventos");
+        tbody.innerHTML = "";
+        if (eventos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="w3-padding-large w3-amber w3-center"><i class="fa-solid fa-circle-info w3-margin-right"></i>No se encontraron actividades que coincidan con los filtros aplicados.</td></tr>`;
+            return;
+        }
+        eventos.forEach(ev => {
+            let porcentaje = ev.aforo > 0 ? Math.round((ev.ocupados / ev.aforo) * 100) : 0;
+            if (porcentaje > 100) porcentaje = 100;
+            let barraColor = porcentaje >= 100 ? "w3-red" : (porcentaje >= 80 ? "w3-orange" : "w3-teal");
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><span class="w3-tag w3-round w3-blue-grey w3-small">${ev.codigo}</span></td>
+                <td class="w3-left-align">
+                    <strong>${ev.nombre}</strong><br>
+                    <span class="w3-small w3-text-gray"><i class="fa-solid fa-layer-group"></i> ${ev.nivel}</span>
+                </td>
+                <td>${ev.ponente}</td>
+                <td>${ev.lugar}<br><span class="w3-tag w3-light-gray w3-text-indigo w3-round w3-small" title="Región / ARC">${ev.cvearc}</span></td>
+                <td>${ev.fecha}<br><span class="w3-small w3-text-gray">${ev.hora}</span></td>
+                <td>
+                    <div class="w3-light-grey w3-round w3-small w3-border" title="${porcentaje}% ocupado">
+                        <div class="w3-container w3-round ${barraColor} w3-center w3-tiny" style="width:${porcentaje}%">
+                            ${ev.ocupados}/${ev.aforo}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="w3-bar">
+                        <button class="w3-button w3-text-blue w3-hover-light-gray w3-round w3-small" onclick="editarEvento(${ev.idactividad})" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="w3-button w3-text-red w3-hover-light-gray w3-round w3-small" onclick="eliminarEvento(${ev.idactividad})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        <button class="w3-button w3-text-purple w3-hover-light-gray w3-round w3-small" onclick="verQR('${ev.guid}')" title="Ver QR"><i class="fa-solid fa-qrcode"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filtrarTabla() {
+        const busqueda = document.getElementById("txtBuscar").value.toLowerCase().trim();
+        const sedeSeleccionada = document.getElementById("cboSede").value;
+        const nivelSeleccionado = document.getElementById("cboNivel").value;
+        const actividadSeleccionada = document.getElementById("cboActividad").value;
+        const regionSeleccionada = document.getElementById("cboRegion").value;
+
+        const filtrados = listaEventosGlobal.filter(e => {
+            const cumpleTexto = busqueda === "" ||
+                                e.codigo.toLowerCase().includes(busqueda) ||
+                                e.nombre.toLowerCase().includes(busqueda) ||
+                                e.ponente.toLowerCase().includes(busqueda);
+
+            const cumpleSede = sedeSeleccionada === "" || e.lugar === sedeSeleccionada;
+            const cumpleNivel = nivelSeleccionado === "" || e.nivel === nivelSeleccionado;
+            const cumpleActividad = actividadSeleccionada === "" || e.actividad === actividadSeleccionada;
+            const cumpleRegion = regionSeleccionada === "" || e.cvearc === regionSeleccionada;
+
+            return cumpleTexto && cumpleSede && cumpleNivel && cumpleActividad && cumpleRegion;
+        });
+
+        renderizarTabla(filtrados);
+    }
+
+    function abrirModalNuevo() {
+        document.getElementById('formEvento').reset();
+        document.getElementById('idactividad').value = '0';
+        document.getElementById('modalEvento').style.display = 'block';
+    }
+
+    function cerrarModalEvento() {
+        document.getElementById('modalEvento').style.display = 'none';
+    }
+
+    document.getElementById("formEvento").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch('/Actividades/Guardar', {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                cerrarModalEvento();
+                cargarEventos();
+                Swal.fire('¡Éxito!', data.message, 'success');
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+
+    function editarEvento(id) {
+        const datos = new URLSearchParams();
+        datos.append('id', id);
+
+        fetch('/Actividades/Detalles', { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById("idactividad").value = data.idactividad;
+                    document.querySelector("input[name='Codigo']").value = data.codigo || "";
+                    document.querySelector("input[name='Nombre']").value = data.nombre || "";
+                    document.querySelector("input[name='Ponente']").value = data.ponente || "";
+                    document.querySelector("input[name='Aforo']").value = data.aforo || 0;
+                    document.getElementById("txtModalNivel").value = data.nivel || "";
+                    document.getElementById("txtModalActividad").value = data.actividad || "";
+                    document.getElementById("cbRegion").value = data.cvearc || "01";
+                    document.querySelector("input[name='Lugar']").value = data.lugar || "";
+                    document.querySelector("input[name='Fecha']").value = data.fecha || "";
+                    document.querySelector("input[name='Hora']").value = data.hora || "";
+                    document.querySelector("input[name='Duracion']").value = data.duracion || "";
+                    document.querySelector("input[name='Subsistema']").value = data.subsistema || "";
+                    document.querySelector("input[name='Modalidad']").value = data.modalidad || "";
+                    document.querySelector("input[name='Domicilio']").value = data.domicilio || "";
+                    document.querySelector("input[name='Federal']").value = data.federal || "";
+                    document.querySelector("input[name='Estatal']").value = data.estatal || "";
+                    document.querySelector("input[name='Staff']").value = data.staff || "";
+                    document.querySelector("input[name='ResponsableStaff']").value = data.responsablestaff || "";
+                    document.querySelector("input[name='Materiales']").value = data.materiales || "";
+                    document.querySelector("textarea[name='Curriculum']").value = data.curriculum || "";
+                    document.getElementById('modalEvento').style.display = 'block';
+                }
+            });
+    }
+
+    function eliminarEvento(id) {
+        Swal.fire({
+            title: '¿Eliminar actividad?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const datos = new URLSearchParams();
+                datos.append('id', id);
+                fetch('/Actividades/Eliminar', { method: 'POST', body: datos })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('Eliminado', data.message, 'success');
+                            cargarEventos();
+                        }
+                    });
+            }
+        });
+    }
+
+    function verQR(guid) {
+        const urlRegistro = window.location.origin + `/Registro?g=${guid}`;
+        new QRious({
+            element: document.getElementById('qrCanvas'),
+            value: urlRegistro,
+            size: 250,
+            level: 'H'
+        });
+        document.getElementById('modalQR').style.display = 'block';
+    }
+</script>

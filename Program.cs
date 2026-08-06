@@ -3,34 +3,35 @@ using SistemaEventosQR.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar SQLite en memoria/archivo local
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=congreso.db"));
+builder.Services.AddControllersWithViews();
 
-builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=eventos.db"));
 
 var app = builder.Build();
 
-// Inicializar la Base de Datos al arrancar
+// Inicializar SQLite y seed de datos
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbInitializer.Initialize(dbContext);
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbInitializer.Initialize(context);
 }
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
 app.UseAuthorization();
 
-app.MapRazorPages();
-app.MapControllers();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Actividades}/{action=Index}/{id?}");
 
 app.Run();
