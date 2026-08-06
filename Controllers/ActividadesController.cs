@@ -157,4 +157,147 @@ public class ActividadesController : Controller
         await _context.SaveChangesAsync();
         return Json(new { success = true, message = "Actividad eliminada correctamente." });
     }
+
+    // GET: Actividades/ObtenerDetalleEvento?id=1
+    [HttpGet]
+    public async Task<IActionResult> ObtenerDetalleEvento(int id)
+    {
+        var actividad = await _context.Actividades
+            .Include(a => a.Cuotas)
+            .Include(a => a.Registros)
+            .FirstOrDefaultAsync(a => a.IdActividad == id);
+
+        if (actividad == null)
+            return NotFound("Actividad no encontrada.");
+
+        // Cargar información de profesores asociados a los registros
+        var rfcs = actividad.Registros.Select(r => r.Rfc).ToList();
+        var profesores = await _context.Profesores
+            .Where(p => rfcs.Contains(p.Rfc))
+            .ToDictionaryAsync(p => p.Rfc);
+
+        ViewBag.Profesores = profesores;
+        return PartialView("_DetalleEventoPartial", actividad);
+    }
+
+    // POST: Actividades/ActualizarCuota
+    [HttpPost]
+    public async Task<IActionResult> ActualizarCuota(int idCuota, string modalidad, short aforo)
+    {
+        var cuota = await _context.Cuotas.FindAsync(idCuota);
+        if (cuota == null)
+            return Json(new { status = "error", message = "Cuota no encontrada." });
+
+        cuota.Modalidad = modalidad;
+        cuota.Aforo = aforo;
+
+        await _context.SaveChangesAsync();
+
+        // Recalcular aforo global de la actividad
+        var aforoGlobal = await _context.Cuotas
+            .Where(c => c.IdActividad == cuota.IdActividad)
+            .SumAsync(c => (int)c.Aforo);
+
+        var actividad = await _context.Actividades.FindAsync(cuota.IdActividad);
+        if (actividad != null)
+        {
+            actividad.Aforo = aforoGlobal;
+            await _context.SaveChangesAsync();
+        }
+
+        int porcentaje = aforo > 0 ? (int)Math.Round((double)cuota.Registros / aforo * 100) : 0;
+
+        return Json(new
+        {
+            status = "success",
+            idactividad = cuota.IdActividad,
+            registros = cuota.Registros,
+            porcentaje,
+            aforoGlobal
+        });
+    }
+
+    // POST: Actividades/AgregarCuota
+    [HttpPost]
+    public async Task<IActionResult> AgregarCuota(int idActividad, string subsistema, string modalidad, short aforo)
+    {
+        var actividad = await _context.Actividades.FindAsync(idActividad);
+        if (actividad == null)
+            return Json(new { status = "error", message = "Actividad no encontrada." });
+
+        if (string.IsNullOrWhiteSpace(modalidad))
+            modalidad = "General";
+
+        var nuevaCuota = new CuotaAforo
+        {
+            IdActividad = idActividad,
+            Subsistema = subsistema,
+            Modalidad = modalidad,
+            Aforo = aforo,
+            Registros = 0
+        };
+
+        _context.Cuotas.Add(nuevaCuota);
+        await _context.SaveChangesAsync();
+
+        // Recalcular el aforo global del evento sumando todas sus cuotas
+        var aforoGlobal = await _context.Cuotas
+            .Where(c => c.IdActividad == idActividad)
+            .SumAsync(c => (int)c.Aforo);
+
+        actividad.Aforo = aforoGlobal;
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+            status = "success",
+            message = "Cuota agregada exitosamente.",
+            idActividad
+        });
+    }
+
+    // POST: Actividades/EliminarCuota
+    [HttpPost]
+    public async Task<IActionResult> EliminarCuota(int idCuota)
+    {
+        var cuota = await _context.Cuotas.FirstOrDefaultAsync(c => c.IdCuota == idCuota);
+
+        if (cuota == null)
+            return Json(new { status = "error", message = "La cuota especificada no existe." });
+
+        // Regla defensiva: Evitar eliminar cuotas con participantes ya inscritos
+        if (cuota.Registros > 0)
+        {
+            return Json(new
+            {
+                status = "error",
+                message = $"No se puede eliminar la cuota porque tiene {cuota.Registros} participante(s) registrado(s)."
+            });
+        }
+
+        int idActividad = cuota.IdActividad;
+
+        _context.Cuotas.Remove(cuota);
+        await _context.SaveChangesAsync();
+
+        // Recalcular el aforo global del evento
+        var aforoGlobal = await _context.Cuotas
+            .Where(c => c.IdActividad == idActividad)
+            .SumAsync(c => (int)c.Aforo);
+
+        var actividad = await _context.Actividades.FindAsync(idActividad);
+        if (actividad != null)
+        {
+            actividad.Aforo = aforoGlobal;
+            await _context.SaveChangesAsync();
+        }
+
+        return Json(new
+        {
+            status = "success",
+            message = "Cuota eliminada correctamente.",
+            idActividad
+        });
+    }
+
 }

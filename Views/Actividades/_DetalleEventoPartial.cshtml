@@ -1,0 +1,135 @@
+﻿@model SistemaEventosQR.Models.ActividadCongreso
+@{
+    var profesores = ViewBag.Profesores as Dictionary<string, SistemaEventosQR.Models.Profesor> ?? new();
+}
+
+<div class="w3-row-padding w3-margin-bottom">
+    <!-- Panel Izquierdo: Cuotas y Aforos -->
+    <div class="w3-col m5 s12">
+        <div class="w3-card w3-white w3-round w3-padding">
+            <div class="w3-row">
+                <div class="w3-col s8">
+                    <h5 class="w3-text-indigo"><i class="fa-solid fa-chart-pie w3-margin-right"></i>Cuotas por Subsistema</h5>
+                </div>
+                <div class="w3-col s4 w3-right-align">
+                    <button type="button" class="w3-button w3-tiny w3-teal w3-round" onclick="mostrarFormNuevaCuota()">
+                        <i class="fa-solid fa-plus"></i> Nueva Cuota
+                    </button>
+                </div>
+            </div>
+            <hr style="margin:8px 0;">
+
+            <!-- Formulario oculto para agregar nueva cuota -->
+            <div id="formNuevaCuota" class="w3-panel w3-light-gray w3-border w3-border-teal w3-round w3-padding w3-margin-bottom w3-hide">
+                <h6 class="w3-text-teal w3-margin-none"><b>Agregar Cuota de Aforo</b></h6>
+                <label class="w3-tiny">Subsistema</label>
+                <select id="nuevaSubsistema" class="w3-select w3-border w3-round w3-tiny w3-white">
+                    <option value="F">Federalizado (F)</option>
+                    <option value="E">Estatal (E)</option>
+                </select>
+
+                <label class="w3-tiny w3-margin-top">Modalidad / Descripción</label>
+                <input type="text" id="nuevaModalidad" class="w3-input w3-border w3-round w3-tiny" placeholder="Ej. Docentes Frente a Grupo">
+
+                <label class="w3-tiny w3-margin-top">Aforo Máximo</label>
+                <input type="number" id="nuevaAforo" class="w3-input w3-border w3-round w3-tiny" value="50" min="1">
+
+                <div class="w3-margin-top w3-right-align">
+                    <button type="button" class="w3-button w3-tiny w3-teal w3-round" onclick="guardarNuevaCuota(@Model.IdActividad)">Guardar</button>
+                    <button type="button" class="w3-button w3-tiny w3-gray w3-round" onclick="ocultarFormNuevaCuota()">Cancelar</button>
+                </div>
+            </div>
+
+            @foreach (var cuota in Model.Cuotas)
+            {
+                int pct = cuota.Aforo > 0 ? (int)Math.Round((double)cuota.Registros / cuota.Aforo * 100) : 0;
+                string colorBarra = pct >= 100 ? "w3-red" : (pct >= 75 ? "w3-orange" : "w3-green");
+
+                <div id="bloque_cuota_@cuota.IdCuota" class="w3-panel w3-border w3-round w3-padding-small w3-margin-bottom" onclick="filtrarAlumnosPorCuota('@cuota.IdCuota', this)" style="cursor:pointer;">
+                    <div class="seccion-vista">
+                        <strong>Subsistema: @(cuota.Subsistema == "F" ? "Federalizado" : "Estatal")</strong><br>
+                        <span class="w3-small w3-text-gray lbl-modalidad">@cuota.Modalidad</span>
+                        <div class="w3-light-grey w3-round w3-tiny w3-margin-top">
+                            <div class="w3-container w3-round @colorBarra barra-progreso" style="width:@(pct)%">@pct%</div>
+                        </div>
+                        <div class="w3-display-container w3-margin-top w3-small">
+                            <span>Aforo: <b class="lbl-aforo">@cuota.Aforo</b></span>
+                            <span class="w3-display-right">Registrados: <b>@cuota.Registros</b></span>
+                        </div>
+                        <div class="w3-margin-top w3-bar">
+                            <button type="button" class="w3-button w3-tiny w3-blue w3-round" onclick="event.stopPropagation(); habilitarEdicionCuota(@cuota.IdCuota);">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                            <button type="button" class="w3-button w3-tiny w3-red w3-round w3-margin-left" onclick="event.stopPropagation(); eliminarCuota(@cuota.IdCuota, @cuota.IdActividad);">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="seccion-edicion w3-hide" onclick="event.stopPropagation();">
+                        <label class="w3-tiny">Modalidad</label>
+                        <input type="text" class="w3-input w3-border w3-round w3-tiny txt-modalidad" value="@cuota.Modalidad">
+                        <label class="w3-tiny w3-margin-top">Aforo</label>
+                        <input type="number" class="w3-input w3-border w3-round w3-tiny txt-aforo" value="@cuota.Aforo">
+                        <div class="w3-margin-top">
+                            <button type="button" class="w3-button w3-tiny w3-green w3-round" onclick="confirmarEdicionCuota(@cuota.IdCuota)">Guardar</button>
+                            <button type="button" class="w3-button w3-tiny w3-gray w3-round" onclick="cancelarEdicionCuota(@cuota.IdCuota)">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Panel Derecho: Lista de Participantes -->
+    <div class="w3-col m7 s12">
+        <div class="w3-card w3-white w3-round w3-padding">
+            <div class="w3-row">
+                <div class="w3-col s8">
+                    <h5 class="w3-text-indigo"><i class="fa-solid fa-users w3-margin-right"></i>Participantes (@Model.Registros.Count)</h5>
+                </div>
+                <div class="w3-col s4 w3-right-align">
+                    <button id="btnImprimirCuota" class="w3-button w3-tiny w3-red w3-round w3-hide" onclick="imprimirCuotaFiltrada('@Model.GuidActividad')">
+                        <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+
+            <input id="txtBuscarFiltroModal" class="w3-input w3-border w3-round w3-small w3-margin-bottom" type="text" placeholder="Filtrar por RFC o CCT..." onkeyup="filtrarAlumnosModal()">
+
+            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                <table class="w3-table-all w3-small" id="tablaAlumnosModal">
+                    <thead>
+                        <tr class="w3-indigo">
+                            <th>RFC</th>
+                            <th>CCT</th>
+                            <th>Nombre del Profesor</th>
+                            <th>Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAlumnosModal">
+                        @if (!Model.Registros.Any())
+                        {
+                            <tr><td colspan="4" class="w3-center w3-text-gray">No hay participantes registrados aún.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var reg in Model.Registros)
+                            {
+                                var prof = profesores.ContainsKey(reg.Rfc) ? profesores[reg.Rfc] : null;
+                                string nombreCompleto = prof != null ? $"{prof.Nombre} {prof.ApePat} {prof.ApeMat}" : "Docente Registrado";
+
+                                <tr class="fila-alumno-modal" data-cuota="@reg.IdCuota">
+                                    <td><b>@reg.Rfc</b></td>
+                                    <td>@reg.Cct</td>
+                                    <td>@nombreCompleto</td>
+                                    <td>@reg.FechaRegistro.ToString("yyyy-MM-dd HH:mm")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

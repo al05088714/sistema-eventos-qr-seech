@@ -262,6 +262,28 @@
     </div>
 </div>
 
+<!-- Modal Detalle / Cuotas de Aforo -->
+<div id="modalDetalleEvento" class="w3-modal">
+    <div class="w3-modal-content w3-card-4 w3-animate-top w3-round-large" style="max-width: 900px;">
+        <header class="w3-container w3-indigo w3-display-container w3-round-top">
+            <span onclick="cerrarModalDetalle()" class="w3-button w3-display-topright w3-hover-red w3-round-top-right">&times;</span>
+            <h4 id="modalTituloEvento" class="w3-margin-none w3-padding-16"><i class="fa-solid fa-chart-pie w3-margin-right"></i>Detalle y Cuotas del Evento</h4>
+        </header>
+        <div class="w3-padding-large">
+            <!-- Loader -->
+            <div id="modalLoading" class="w3-center w3-padding-32">
+                <i class="fa-solid fa-spinner fa-spin fa-2x w3-text-indigo"></i>
+                <p class="w3-margin-top w3-text-gray">Cargando desglose de aforo y participantes...</p>
+            </div>
+            <!-- Contenido dinámico renderizado desde la Partial View -->
+            <div id="modalDatosContenido" class="w3-hide"></div>
+        </div>
+        <footer class="w3-container w3-light-gray w3-padding w3-right-align w3-round-bottom">
+            <button type="button" class="w3-button w3-border w3-round w3-white" onclick="cerrarModalDetalle()">Cerrar</button>
+        </footer>
+    </div>
+</div>
+
 <script>
     let listaEventosGlobal = [];
 
@@ -396,6 +418,7 @@
                 </td>
                 <td>
                     <div class="w3-bar">
+                        <button class="w3-button w3-text-indigo w3-hover-light-gray w3-round w3-small" onclick="verDetalleEvento(${ev.idactividad}, '${ev.nombre.replace(/'/g, "\\'")}')" title="Detalle y Cuotas de Aforo"><i class="fa-solid fa-chart-pie"></i></button>
                         <button class="w3-button w3-text-blue w3-hover-light-gray w3-round w3-small" onclick="editarEvento(${ev.idactividad})" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="w3-button w3-text-red w3-hover-light-gray w3-round w3-small" onclick="eliminarEvento(${ev.idactividad})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                         <button class="w3-button w3-text-purple w3-hover-light-gray w3-round w3-small" onclick="verQR('${ev.guid}')" title="Ver QR"><i class="fa-solid fa-qrcode"></i></button>
@@ -527,5 +550,161 @@
             level: 'H'
         });
         document.getElementById('modalQR').style.display = 'block';
+    }
+
+    function verDetalleEvento(idActividad, nombreActividad) {
+        document.getElementById("modalTituloEvento").innerText = nombreActividad;
+        document.getElementById("modalLoading").classList.remove("w3-hide");
+        document.getElementById("modalDatosContenido").classList.add("w3-hide");
+        document.getElementById("modalDetalleEvento").style.display = 'block';
+
+        fetch('/Actividades/ObtenerDetalleEvento?id=' + idActividad)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("modalDatosContenido").innerHTML = html;
+                document.getElementById("modalLoading").classList.add("w3-hide");
+                document.getElementById("modalDatosContenido").classList.remove("w3-hide");
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("modalDatosContenido").innerHTML = '<p class="w3-red w3-padding">Error al recuperar datos.</p>';
+                document.getElementById("modalLoading").classList.add("w3-hide");
+                document.getElementById("modalDatosContenido").classList.remove("w3-hide");
+            });
+    }
+    function cerrarModalDetalle() {
+        document.getElementById('modalDetalleEvento').style.display = 'none';
+    }
+
+    function habilitarEdicionCuota(id) {
+        const bloque = document.getElementById('bloque_cuota_' + id);
+        if(bloque) {
+            bloque.querySelector('.seccion-vista').classList.add('w3-hide');
+            bloque.querySelector('.seccion-edicion').classList.remove('w3-hide');
+        }
+    }
+
+    function cancelarEdicionCuota(id) {
+        const bloque = document.getElementById('bloque_cuota_' + id);
+        if(bloque) {
+            bloque.querySelector('.seccion-vista').classList.remove('w3-hide');
+            bloque.querySelector('.seccion-edicion').classList.add('w3-hide');
+        }
+    }
+
+    function confirmarEdicionCuota(id) {
+        const bloque = document.getElementById('bloque_cuota_' + id);
+        const modalidad = bloque.querySelector('.txt-modalidad').value;
+        const aforo = bloque.querySelector('.txt-aforo').value;
+
+        const datos = new URLSearchParams();
+        datos.append('idCuota', id);
+        datos.append('modalidad', modalidad);
+        datos.append('aforo', aforo);
+
+        fetch('/Actividades/ActualizarCuota', { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    bloque.querySelector('.lbl-modalidad').innerText = modalidad;
+                    bloque.querySelector('.lbl-aforo').innerText = aforo;
+
+                    const barra = bloque.querySelector('.barra-progreso');
+                    barra.style.width = data.porcentaje + '%';
+                    barra.innerText = data.porcentaje + '%';
+
+                    cancelarEdicionCuota(id);
+                    cargarEventos(); // Actualiza la tabla principal
+                    Swal.fire('¡Aforo actualizado!', 'La cuota de aforo ha sido modificada.', 'success');
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+    }
+
+    function filtrarAlumnosModal() {
+        const filtro = document.getElementById('txtBuscarFiltroModal').value.toLowerCase();
+        const filas = document.querySelectorAll('#tablaAlumnosModal .fila-alumno-modal');
+        filas.forEach(fila => {
+            const texto = fila.innerText.toLowerCase();
+            fila.style.display = texto.includes(filtro) ? '' : 'none';
+        });
+    }
+
+    function mostrarFormNuevaCuota() {
+        document.getElementById('formNuevaCuota').classList.remove('w3-hide');
+    }
+
+    function ocultarFormNuevaCuota() {
+        document.getElementById('formNuevaCuota').classList.add('w3-hide');
+    }
+
+    function guardarNuevaCuota(idActividad) {
+        const subsistema = document.getElementById('nuevaSubsistema').value;
+        const modalidad = document.getElementById('nuevaModalidad').value;
+        const aforo = document.getElementById('nuevaAforo').value;
+
+        if (!aforo || aforo <= 0) {
+            Swal.fire('Atención', 'El aforo debe ser mayor a 0.', 'warning');
+            return;
+        }
+
+        const datos = new URLSearchParams();
+        datos.append('idActividad', idActividad);
+        datos.append('subsistema', subsistema);
+        datos.append('modalidad', modalidad);
+        datos.append('aforo', aforo);
+
+        fetch('/Actividades/AgregarCuota', { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire('¡Éxito!', data.message, 'success');
+                    // Recargamos el contenido de la modal y refrescamos la tabla general
+                    verDetalleEvento(idActividad, document.getElementById('modalTituloEvento').innerText);
+                    cargarEventos();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'No se pudo registrar la cuota.', 'error');
+            });
+    }
+
+        function eliminarCuota(idCuota, idActividad) {
+        Swal.fire({
+            title: '¿Eliminar cuota de aforo?',
+            text: 'Esta acción eliminará el cupo configurado para este subsistema.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const datos = new URLSearchParams();
+                datos.append('idCuota', idCuota);
+
+                fetch('/Actividades/EliminarCuota', { method: 'POST', body: datos })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire('Eliminado', data.message, 'success');
+                            // Refrescamos la modal de detalle y la tabla principal
+                            verDetalleEvento(idActividad, document.getElementById('modalTituloEvento').innerText);
+                            cargarEventos();
+                        } else {
+                            Swal.fire('No se puede eliminar', data.message, 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
+                    });
+            }
+        });
     }
 </script>
