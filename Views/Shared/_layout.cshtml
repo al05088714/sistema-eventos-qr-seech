@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Sistema Eventos QR</title>
+
+    <!-- Framework W3.CSS & Iconos FontAwesome -->
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background-color: #f4f6f9;
+        }
+
+        .nav-active {
+            font-weight: bold;
+            border-bottom: 3px solid #3f51b5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Navegación Principal -->
+    <div class="w3-bar w3-indigo w3-card w3-padding">
+        <a href="/" class="w3-bar-item w3-button w3-bold w3-hover-blue w3-round">
+            <i class="fa fa-qrcode w3-margin-right"></i>Sistema Eventos QR
+        </a>
+
+        <a href="/Inscripcion" class="w3-bar-item w3-button w3-hover-blue w3-round w3-hide-small">
+            <i class="fa fa-user-plus w3-margin-right"></i>Inscripción
+        </a>
+
+        <!-- Botón temporal para Issue #4 cuando se implemente el CheckIn -->
+        <a href="/CheckIn" class="w3-bar-item w3-button w3-hover-blue w3-round w3-hide-small">
+            <i class="fa fa-check-square-o w3-margin-right"></i>Acreditación / Check-in
+        </a>
+
+        <a href="javascript:void(0)" class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium" onclick="toggleMobileNav()">
+            <i class="fa fa-bars"></i>
+        </a>
+    </div>
+
+    <!-- Menú Responsive para Móviles -->
+    <div id="mobileNav" class="w3-bar-block w3-indigo w3-hide w3-hide-large w3-hide-medium">
+        <a href="/Inscripcion" class="w3-bar-item w3-button"><i class="fa fa-user-plus w3-margin-right"></i>Inscripción</a>
+        <a href="/CheckIn" class="w3-bar-item w3-button"><i class="fa fa-check-square-o w3-margin-right"></i>Check-in</a>
+    </div>
+
+    <!-- Contenido dinámico de las Vistas -->
+    <main role="main" class="w3-container w3-padding-24">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="w3-container w3-center w3-padding-16 w3-light-grey w3-border-top w3-small w3-text-grey" style="margin-top:40px;">
+        <p class="w3-margin-none">&copy; @DateTime.Now.Year - Sistema de Eventos y Congresos | Módulo de Registro QR</p>
+    </footer>
+
+    <script>
+        function toggleMobileNav() {
+            var x = document.getElementById("mobileNav");
+            if (x.className.indexOf("w3-show") === -1) {
+                x.className += " w3-show";
+            } else {
+                x.className = x.className.replace(" w3-show", "");
+            }
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,149 @@
+﻿@model SistemaEventosQR.Models.ViewModels.InscripcionViewModel
+
+@{
+    ViewData["Title"] = "Registro al Evento";
+    Layout = "_layout";
+    var actividades = ViewBag.Actividades as List<SistemaEventosQR.Models.ActividadCongreso> ?? new List<SistemaEventosQR.Models.ActividadCongreso>();
+}
+
+<div class="w3-container w3-margin-top" style="max-width: 800px; margin: 0 auto;">
+    <div class="w3-card-4 w3-white w3-round-large">
+        <div class="w3-container w3-indigo w3-padding-16 w3-round-large" style="border-bottom-left-radius:0!important; border-bottom-right-radius:0!important;">
+            <h2 class="w3-margin-none"><i class="fa fa-user-plus w3-margin-right"></i>Inscripción al Evento</h2>
+            <p class="w3-margin-none w3-opacity">Ingrese su RFC para verificar su registro o inscribirse por primera vez.</p>
+        </div>
+
+        <form asp-action="Registrar" method="post" class="w3-container w3-padding-24">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""]?.Errors.Count > 0)
+            {
+                <div class="w3-panel w3-red w3-round w3-padding">
+                    <strong><i class="fa fa-exclamation-triangle"></i> Atención:</strong>
+                    <div asp-validation-summary="ModelOnly" class="w3-small"></div>
+                </div>
+            }
+
+            <!-- Selección de Actividad -->
+            <div class="w3-section">
+                <label asp-for="IdActividad" class="w3-text-dark-grey w3-bold">
+                    Actividad / Evento <span class="w3-text-red">*</span>
+                </label>
+
+                @if (ViewBag.EventoUnico == true)
+                {
+                    var actividad = (ViewBag.Actividades as List<SistemaEventosQR.Models.ActividadCongreso>)?.FirstOrDefault();
+
+                    <!-- Campo oculto para enviar el IdActividad en el submit -->
+                    <input type="hidden" asp-for="IdActividad" value="@actividad?.IdActividad" />
+
+                    <div class="w3-panel w3-light-grey w3-leftbar w3-border-indigo w3-padding w3-round">
+                        <h4 class="w3-margin-none w3-text-indigo">
+                            <i class="fa fa-calendar-check-o w3-margin-right"></i>@actividad?.Nombre
+                        </h4>
+                        @if (!string.IsNullOrEmpty(actividad?.Lugar))
+                        {
+                            <p class="w3-small w3-margin-none w3-text-grey">
+                                <i class="fa fa-map-marker w3-margin-right"></i>@actividad.Lugar
+                            </p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <select asp-for="IdActividad" class="w3-select w3-border w3-round" required>
+                        <option value="" disabled selected>-- Seleccione una actividad --</option>
+                        @foreach (var act in ViewBag.Actividades as List<SistemaEventosQR.Models.ActividadCongreso> ?? new List<SistemaEventosQR.Models.ActividadCongreso>())
+                        {
+                            <option value="@act.IdActividad">
+                                @act.Nombre @(!string.IsNullOrEmpty(act.Lugar) ? $"({act.Lugar})" : "")
+                            </option>
+                        }
+                    </select>
+                }
+                <span asp-validation-for="IdActividad" class="w3-text-red w3-small"></span>
+            </div>
+
+            <!-- RFC Búsqueda -->
+            <div class="w3-section">
+                <label asp-for="Curp" class="w3-text-dark-grey w3-bold">RFC del Docente / Participante <span class="w3-text-red">*</span></label>
+                <input asp-for="Curp" id="txtRfc" class="w3-input w3-border w3-round" style="text-transform: uppercase;"
+                       placeholder="EJ: VECJ880101XXX" maxlength="13" onkeyup="buscarRfc(this.value)" required />
+                <span asp-validation-for="Curp" class="w3-text-red w3-small"></span>
+                <div id="rfc-status" class="w3-margin-top"></div>
+            </div>
+
+            <!-- Datos Personales -->
+            <div class="w3-row-padding" style="margin:0 -16px;">
+                <div class="w3-third w3-section">
+                    <label asp-for="Nombre" class="w3-text-dark-grey w3-bold">Nombre(s) <span class="w3-text-red">*</span></label>
+                    <input asp-for="Nombre" id="txtNombre" class="w3-input w3-border w3-round" style="text-transform: uppercase;" required />
+                    <span asp-validation-for="Nombre" class="w3-text-red w3-small"></span>
+                </div>
+                <div class="w3-third w3-section">
+                    <label asp-for="ApePat" class="w3-text-dark-grey w3-bold">Apellido Paterno <span class="w3-text-red">*</span></label>
+                    <input asp-for="ApePat" id="txtApePat" class="w3-input w3-border w3-round" style="text-transform: uppercase;" required />
+                    <span asp-validation-for="ApePat" class="w3-text-red w3-small"></span>
+                </div>
+                <div class="w3-third w3-section">
+                    <label asp-for="ApeMat" class="w3-text-dark-grey w3-bold">Apellido Materno <span class="w3-text-red">*</span></label>
+                    <input asp-for="ApeMat" id="txtApeMat" class="w3-input w3-border w3-round" style="text-transform: uppercase;" required />
+                    <span asp-validation-for="ApeMat" class="w3-text-red w3-small"></span>
+                </div>
+            </div>
+
+            <!-- CCT y Subsistema -->
+            <div class="w3-row-padding" style="margin:0 -16px;">
+                <div class="w3-half w3-section">
+                    <label asp-for="Cct" class="w3-text-dark-grey w3-bold">CCT de la Institución <span class="w3-text-red">*</span></label>
+                    <input asp-for="Cct" id="txtCct" class="w3-input w3-border w3-round" style="text-transform: uppercase;" maxlength="10" required />
+                    <span asp-validation-for="Cct" class="w3-text-red w3-small"></span>
+                </div>
+                <div class="w3-half w3-section">
+                    <label asp-for="Subsistema" class="w3-text-dark-grey w3-bold">Subsistema <span class="w3-text-red">*</span></label>
+                    <select asp-for="Subsistema" id="txtSubsistema" class="w3-select w3-border w3-round" required>
+                        <option value="F">Federalizado</option>
+                        <option value="E">Estatal</option>
+                    </select>
+                    <span asp-validation-for="Subsistema" class="w3-text-red w3-small"></span>
+                </div>
+            </div>
+
+            <div class="w3-section w3-padding-16 w3-center">
+                <button type="submit" class="w3-button w3-indigo w3-hover-blue w3-round-large w3-large w3-block">
+                    <i class="fa fa-qrcode w3-margin-right"></i> Confirmar Inscripción
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function buscarRfc(val) {
+            var rfc = val.trim().toUpperCase();
+            var statusDiv = document.getElementById('rfc-status');
+
+            if (rfc.length >= 12) {
+                fetch('/Inscripcion/BuscarProfesor?rfc=' + rfc)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.encontrado) {
+                            document.getElementById('txtNombre').value = data.nombre;
+                            document.getElementById('txtApePat').value = data.apePat;
+                            document.getElementById('txtApeMat').value = data.apeMat;
+                            document.getElementById('txtCct').value = data.cct;
+                            if(data.subsistema) {
+                                document.getElementById('txtSubsistema').value = data.subsistema;
+                            }
+                            statusDiv.innerHTML = '<div class="w3-panel w3-light-green w3-round w3-padding-small"><i class="fa fa-check-circle"></i> RFC localizado en el padrón. Sus datos se han cargado automáticamente.</div>';
+                        } else {
+                            statusDiv.innerHTML = '<div class="w3-panel w3-pale-yellow w3-round w3-padding-small"><i class="fa fa-info-circle"></i> RFC no encontrado en el padrón. Por favor complete sus datos para registrarse.</div>';
+                        }
+                    });
+            } else {
+                statusDiv.innerHTML = '';
+            }
+        }
+    </script>
+}

@@ -1,0 +1,64 @@
+﻿@model SistemaEventosQR.Models.RegistroAlumno
+
+@{
+    ViewData["Title"] = "Pase de Acceso";
+    Layout = "_layout";
+    string tokenHash = ViewBag.TokenHash as string ?? "";
+    var profesor = ViewBag.Profesor as SistemaEventosQR.Models.Profesor;
+}
+
+<div class="w3-container w3-margin-top" style="max-width: 650px; margin: 0 auto;">
+    <div class="w3-card-4 w3-white w3-round-large w3-center">
+
+        <div class="w3-container w3-teal w3-padding-16 w3-round-large" style="border-bottom-left-radius:0!important; border-bottom-right-radius:0!important;">
+            <i class="fa fa-check-circle w3-jumbo"></i>
+            <h2 class="w3-margin-none">¡Inscripción Exitosa!</h2>
+            <p class="w3-margin-none w3-opacity">Conserve este comprobante para ingresar al evento.</p>
+        </div>
+
+        <div class="w3-container w3-padding-24">
+            <div class="w3-padding">
+                <canvas id="qr-canvas" class="w3-border w3-padding w3-round" style="max-width: 240px; height: auto;"></canvas>
+            </div>
+
+            <p class="w3-small w3-text-grey w3-margin-none">Token Único de Verificación:</p>
+            <code class="w3-small w3-light-grey w3-padding w3-round">@tokenHash</code>
+
+            <hr class="w3-border-grey" style="border-style: dashed; margin: 20px 0;" />
+
+            <div class="w3-left-align w3-padding">
+                <h4 class="w3-text-teal"><i class="fa fa-calendar-event w3-margin-right"></i>@Model.Actividad?.Nombre</h4>
+
+                @if (profesor != null)
+                {
+                    <p><strong><i class="fa fa-user w3-margin-right"></i>Participante:</strong> @profesor.Nombre @profesor.ApePat @profesor.ApeMat</p>
+                }
+
+                <p><strong><i class="fa fa-id-card w3-margin-right"></i>RFC:</strong> @Model.Rfc</p>
+                <p><strong><i class="fa fa-building w3-margin-right"></i>CCT:</strong> @Model.Cct</p>
+                <p><strong><i class="fa fa-clock-o w3-margin-right"></i>Fecha de Registro:</strong> @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm hrs")</p>
+            </div>
+
+            <div class="w3-section w3-padding-16 no-print">
+                <button onclick="window.print();" class="w3-button w3-dark-grey w3-hover-black w3-round">
+                    <i class="fa fa-print w3-margin-right"></i> Imprimir Comprobante
+                </button>
+                <a asp-action="Index" class="w3-button w3-teal w3-hover-green w3-round">
+                    <i class="fa fa-plus w3-margin-right"></i> Nueva Inscripción
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        new QRious({
+            element: document.getElementById('qr-canvas'),
+            value: '@tokenHash',
+            size: 240,
+            level: 'H'
+        });
+    });
+</script>

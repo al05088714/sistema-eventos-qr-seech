@@ -542,7 +542,7 @@
     }
 
     function verQR(guid) {
-        const urlRegistro = window.location.origin + `/Registro?g=${guid}`;
+        const urlRegistro = window.location.origin + `/Inscripcion?g=${guid}`;
         new QRious({
             element: document.getElementById('qrCanvas'),
             value: urlRegistro,
