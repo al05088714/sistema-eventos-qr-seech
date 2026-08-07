@@ -1,0 +1,163 @@
+﻿@{
+    ViewData["Title"] = "Módulo de Acreditación y Check-In";
+}
+
+<div class="w3-container w3-margin-top" style="max-width: 900px; margin: 0 auto;">
+
+    <div class="w3-card-4 w3-white w3-round-large">
+        <div class="w3-container w3-dark-grey w3-padding-16 w3-round-large" style="border-bottom-left-radius:0!important; border-bottom-right-radius:0!important;">
+            <h2 class="w3-margin-none"><i class="fa fa-qrcode w3-margin-right"></i>Acreditación y Check-In</h2>
+            <p class="w3-margin-none w3-opacity">Escanee el código QR del pase de acceso o ingrese el token manualmente.</p>
+        </div>
+
+        <div class="w3-row-padding w3-padding-24">
+
+            <!-- Columna Izquierda: Camara / Scanner QR -->
+            <div class="w3-half w3-center">
+                <div class="w3-card w3-light-grey w3-padding w3-round">
+                    <h4><i class="fa fa-camera w3-margin-right"></i>Escáner de Cámara</h4>
+                    <div id="reader" style="width: 100%; min-height: 250px;" class="w3-round"></div>
+
+                    <div class="w3-margin-top">
+                        <button id="btnStartScan" onclick="iniciarEscaner()" class="w3-button w3-indigo w3-round w3-small">
+                            <i class="fa fa-play w3-margin-right"></i>Iniciar Cámara
+                        </button>
+                        <button id="btnStopScan" onclick="detenerEscaner()" class="w3-button w3-red w3-round w3-small" style="display:none;">
+                            <i class="fa fa-stop w3-margin-right"></i>Detener Cámara
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Entrada Manual -->
+                <div class="w3-panel w3-border w3-round w3-padding w3-margin-top">
+                    <label class="w3-text-dark-grey w3-bold w3-small">Ingreso Manual de Token / RFC:</label>
+                    <div class="w3-bar w3-margin-top">
+                        <input type="text" id="txtTokenManual" class="w3-input w3-border w3-bar-item w3-round-left" style="width:70%" placeholder="Token o RFC..." />
+                        <button onclick="procesarManual()" class="w3-button w3-teal w3-bar-item w3-round-right" style="width:30%">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Resultado y Feedback Visual -->
+            <div class="w3-half">
+                <div id="panelEstatus" class="w3-card w3-padding-24 w3-center w3-round w3-light-grey" style="min-height: 320px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <i id="iconEstatus" class="fa fa-id-badge w3-jumbo w3-text-grey"></i>
+                    <h3 id="tituloEstatus" class="w3-margin-top">Esperando lectura...</h3>
+                    <p id="mensajeEstatus" class="w3-text-grey w3-padding">Acerque el código QR del pase de acceso a la cámara.</p>
+
+                    <div id="detallesParticipante" class="w3-left-align w3-padding w3-margin-top w3-border-top" style="display:none; width:100%;">
+                        <p class="w3-margin-small"><strong><i class="fa fa-user w3-margin-right"></i>Nombre:</strong> <span id="lblNombre"></span></p>
+                        <p class="w3-margin-small"><strong><i class="fa fa-calendar w3-margin-right"></i>Evento:</strong> <span id="lblEvento"></span></p>
+                        <p class="w3-margin-small"><strong><i class="fa fa-id-card w3-margin-right"></i>RFC:</strong> <span id="lblRfc"></span></p>
+                        <p class="w3-margin-small"><strong><i class="fa fa-building w3-margin-right"></i>CCT:</strong> <span id="lblCct"></span></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- HTML5 QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <script>
+        let html5QrcodeScanner = null;
+
+        function iniciarEscaner() {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess
+            ).then(() => {
+                document.getElementById('btnStartScan').style.display = 'none';
+                document.getElementById('btnStopScan').style.display = 'inline-block';
+            }).catch(err => {
+                alert("No se pudo acceder a la cámara: " + err);
+            });
+        }
+
+        function detenerEscaner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    document.getElementById('btnStartScan').style.display = 'inline-block';
+                    document.getElementById('btnStopScan').style.display = 'none';
+                });
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Pausar o procesar lectura
+            enviarTokenServidor(decodedText);
+        }
+
+        function procesarManual() {
+            const token = document.getElementById('txtTokenManual').value.trim();
+            if (token) {
+                enviarTokenServidor(token);
+            }
+        }
+
+        function enviarTokenServidor(tokenVal) {
+            fetch('/CheckIn/ValidarAcceso', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: tokenVal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                mostrarResultado(data);
+            })
+            .catch(err => {
+                console.error(err);
+            });
+        }
+
+        function mostrarResultado(data) {
+            const panel = document.getElementById('panelEstatus');
+            const icono = document.getElementById('iconEstatus');
+            const titulo = document.getElementById('tituloEstatus');
+            const mensaje = document.getElementById('mensajeEstatus');
+            const detalles = document.getElementById('detallesParticipante');
+
+            detalles.style.display = 'none';
+
+            if (data.estatus === 'EXITO') {
+                panel.className = "w3-card w3-padding-24 w3-center w3-round w3-green w3-animate-opacity";
+                icono.className = "fa fa-check-circle w3-jumbo";
+                titulo.innerText = "ACCESO CONCEDIDO";
+                mensaje.innerText = data.mensaje;
+
+                document.getElementById('lblNombre').innerText = data.participante;
+                document.getElementById('lblEvento').innerText = data.actividad;
+                document.getElementById('lblRfc').innerText = data.rfc;
+                document.getElementById('lblCct').innerText = data.cct;
+                detalles.style.display = 'block';
+
+            } else if (data.estatus === 'DUPLICADO') {
+                panel.className = "w3-card w3-padding-24 w3-center w3-round w3-orange w3-text-white w3-animate-opacity";
+                icono.className = "fa fa-exclamation-triangle w3-jumbo";
+                titulo.innerText = "PASE YA UTILIZADO";
+                mensaje.innerText = data.mensaje;
+
+                document.getElementById('lblNombre').innerText = data.participante;
+                document.getElementById('lblEvento').innerText = data.actividad;
+                document.getElementById('lblRfc').innerText = data.rfc;
+                document.getElementById('lblCct').innerText = data.cct;
+                detalles.style.display = 'block';
+
+            } else {
+                panel.className = "w3-card w3-padding-24 w3-center w3-round w3-red w3-animate-opacity";
+                icono.className = "fa fa-times-circle w3-jumbo";
+                titulo.innerText = "CÓDIGO INVÁLIDO";
+                mensaje.innerText = data.mensaje;
+            }
+        }
+    </script>
+}
