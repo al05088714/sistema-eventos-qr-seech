@@ -5,13 +5,13 @@ Estado CI/CD:
 
 ## Tabla de Contenidos (ToC)
 
-1. [Resumen Ejecutivo](#-resumen-ejecutivo)
-2. [Requerimientos del Sistema](#-requerimientos-del-sistema)
-3. [Instalación y Despliegue](#-instalación-y-despliegue)
-4. [Configuración](#-configuración)
-5. [Manual de Uso](#-manual-de-uso)
-6. [Guía de Contribución](#-guía-de-contribución)
-7. [Roadmap y Alcance Futuro](#-roadmap-y-alcance-futuro)
+1. [Resumen Ejecutivo](#resumen-ejecutivo)
+2. [Requerimientos del Sistema](#requerimientos-del-sistema)
+3. [Instalación y Despliegue](#instalación-y-despliegue)
+4. [Configuración](#configuración)
+5. [Manual de Uso](#manual-de-uso)
+6. [Guía de Contribución](#guía-de-contribución)
+7. [Roadmap y Alcance Futuro](#roadmap-y-alcance-futuro)
 
 ## Resumen Ejecutivo
    * Descripción del Proyecto
