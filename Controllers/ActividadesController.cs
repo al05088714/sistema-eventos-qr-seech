@@ -110,9 +110,9 @@ public class ActividadesController : Controller
         }
     }
 
-    // POST: Actividades/Detalles (Reemplaza a congreso-data.asp?a=detalles)
+    // POST: Actividades/Detalles
     [HttpPost]
-    public async Task<IActionResult> Detalles(int id)
+    public async Task<IActionResult> Detalles([FromForm] int id)
     {
         var a = await _context.Actividades.FindAsync(id);
         if (a == null)
