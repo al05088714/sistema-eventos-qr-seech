@@ -128,6 +128,5 @@ Los siguientes requerimientos fueron identificados durante la arquitectura inici
    - Issue #8 (OUT-02) — Módulo Nativo de Envío Masivo SMTP:
       * Envío automático de pases en PDF y confirmaciones al correo institucional del docente tras su registro. (Etiqueta: deferred).
 
-Módulo de Mapeo Geográfico:
-
-Integración con mapas interactivos (Leaflet/Terra Draw) para trazar polígonos de ubicación de sedes educativas.
+* Módulo de Mapeo Geográfico:
+   - Integración con mapas interactivos (Leaflet/Terra Draw) para trazar polígonos de ubicación de sedes educativas.
