@@ -419,6 +419,7 @@
                 <td>
                     <div class="w3-bar">
                         <button class="w3-button w3-text-indigo w3-hover-light-gray w3-round w3-small" onclick="verDetalleEvento(${ev.idactividad}, '${ev.nombre.replace(/'/g, "\\'")}')" title="Detalle y Cuotas de Aforo"><i class="fa-solid fa-chart-pie"></i></button>
+                        <button class="w3-button w3-text-teal w3-hover-light-gray w3-round w3-small" onclick="verAsistenciaEvento(${ev.idactividad})" title="Ver Lista de Asistencia"><i class="fa-solid fa-users"></i></button>
                         <button class="w3-button w3-text-blue w3-hover-light-gray w3-round w3-small" onclick="editarEvento(${ev.idactividad})" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="w3-button w3-text-red w3-hover-light-gray w3-round w3-small" onclick="eliminarEvento(${ev.idactividad})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                         <button class="w3-button w3-text-purple w3-hover-light-gray w3-round w3-small" onclick="verQR('${ev.guid}')" title="Ver QR"><i class="fa-solid fa-qrcode"></i></button>
@@ -673,38 +674,41 @@
             });
     }
 
-        function eliminarCuota(idCuota, idActividad) {
-        Swal.fire({
-            title: '¿Eliminar cuota de aforo?',
-            text: 'Esta acción eliminará el cupo configurado para este subsistema.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const datos = new URLSearchParams();
-                datos.append('idCuota', idCuota);
+    function eliminarCuota(idCuota, idActividad) {
+    Swal.fire({
+        title: '¿Eliminar cuota de aforo?',
+        text: 'Esta acción eliminará el cupo configurado para este subsistema.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const datos = new URLSearchParams();
+            datos.append('idCuota', idCuota);
 
-                fetch('/Actividades/EliminarCuota', { method: 'POST', body: datos })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            Swal.fire('Eliminado', data.message, 'success');
-                            // Refrescamos la modal de detalle y la tabla principal
-                            verDetalleEvento(idActividad, document.getElementById('modalTituloEvento').innerText);
-                            cargarEventos();
-                        } else {
-                            Swal.fire('No se puede eliminar', data.message, 'error');
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
-                    });
-            }
-        });
+            fetch('/Actividades/EliminarCuota', { method: 'POST', body: datos })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire('Eliminado', data.message, 'success');
+                        // Refrescamos la modal de detalle y la tabla principal
+                        verDetalleEvento(idActividad, document.getElementById('modalTituloEvento').innerText);
+                        cargarEventos();
+                    } else {
+                        Swal.fire('No se puede eliminar', data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
+                });
+        }
+    });
+    }
+    function verAsistenciaEvento(idActividad) {
+        window.location.href = `/Inscripcion/Asistencia/${idActividad}`;
     }
 </script>

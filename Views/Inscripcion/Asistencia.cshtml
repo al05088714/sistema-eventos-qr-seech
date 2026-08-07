@@ -1,0 +1,179 @@
+﻿@model IEnumerable<SistemaEventosQR.Models.ReporteAsistenciaViewModel>
+
+@{
+    ViewData["Title"] = "Reporte de Asistencia por Evento";
+    var actividades = ViewBag.Actividades as List<SistemaEventosQR.Models.ActividadCongreso> ?? new List<SistemaEventosQR.Models.ActividadCongreso>();
+    int idSeleccionado = ViewBag.IdActividadSeleccionada ?? 0;
+}
+
+<div class="w3-container w3-margin-top">
+
+    <!-- Encabezado y Filtro de Evento -->
+    <div class="w3-card-4 w3-white w3-round-large w3-margin-bottom">
+        <div class="w3-container w3-indigo w3-padding-16 w3-round-large" style="border-bottom-left-radius:0!important; border-bottom-right-radius:0!important;">
+            <div class="w3-row">
+                <div class="w3-col m8">
+                    <h2 class="w3-margin-none"><i class="fa fa-users w3-margin-right"></i>Estatus de Asistencia por Evento</h2>
+                    <p class="w3-margin-none w3-opacity">Consulte la lista de inscritos y confirmación de asistencia en tiempo real.</p>
+                </div>
+                <div class="w3-col m4 w3-right-align w3-hide-small">
+                    <a href="@Url.Action("Index", "CheckIn")" class="w3-button w3-teal w3-round">
+                        <i class="fa fa-qrcode w3-margin-right"></i>Ir al Scanner de Puerta
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="w3-padding-16 w3-container">
+            <form method="get" asp-action="Asistencia" class="w3-row-padding">
+                <div class="w3-col m9 s12">
+                    <label class="w3-text-dark-grey w3-bold w3-small">Seleccionar Actividad / Conferencia:</label>
+                    <select name="idActividad" class="w3-select w3-border w3-round" onchange="this.form.submit()">
+                        @foreach (var act in actividades)
+                        {
+                            <option value="@act.IdActividad" selected="@(act.IdActividad == idSeleccionado)">
+                                @act.Nombre @(!string.IsNullOrEmpty(act.Lugar) ? $"({act.Lugar})" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="w3-col m3 s12 w3-margin-top">
+                    <button type="submit" class="w3-button w3-block w3-dark-grey w3-round">
+                        <i class="fa fa-filter w3-margin-right"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Métricas (KPIs) -->
+    <div class="w3-row-padding w3-margin-bottom">
+        <div class="w3-quarter">
+            <div class="w3-card w3-container w3-blue w3-padding-16 w3-round">
+                <div class="w3-left"><i class="fa fa-address-book w3-xxxlarge"></i></div>
+                <div class="w3-right">
+                    <h3>@ViewBag.TotalInscritos</h3>
+                </div>
+                <div class="w3-clear"></div>
+                <h4>Total Inscritos</h4>
+            </div>
+        </div>
+        <div class="w3-quarter">
+            <div class="w3-card w3-container w3-green w3-padding-16 w3-round">
+                <div class="w3-left"><i class="fa fa-check-circle w3-xxxlarge"></i></div>
+                <div class="w3-right">
+                    <h3>@ViewBag.TotalAsistieron</h3>
+                </div>
+                <div class="w3-clear"></div>
+                <h4>Asistieron</h4>
+            </div>
+        </div>
+        <div class="w3-quarter">
+            <div class="w3-card w3-container w3-orange w3-text-white w3-padding-16 w3-round">
+                <div class="w3-left"><i class="fa fa-clock-o w3-xxxlarge"></i></div>
+                <div class="w3-right">
+                    <h3>@ViewBag.TotalPendientes</h3>
+                </div>
+                <div class="w3-clear"></div>
+                <h4>Pendientes</h4>
+            </div>
+        </div>
+        <div class="w3-quarter">
+            <div class="w3-card w3-container w3-teal w3-padding-16 w3-round">
+                <div class="w3-left"><i class="fa fa-pie-chart w3-xxxlarge"></i></div>
+                <div class="w3-right">
+                    <h3>@ViewBag.PorcentajeAsistencia%</h3>
+                </div>
+                <div class="w3-clear"></div>
+                <h4>% Cobertura</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Participantes -->
+    <div class="w3-card-4 w3-white w3-round-large w3-padding">
+        <div class="w3-row w3-margin-bottom w3-padding">
+            <div class="w3-col m6 s12">
+                <input type="text" id="busquedaTabla" class="w3-input w3-border w3-round" placeholder="🔍 Buscar por nombre, RFC o CCT..." onkeyup="filtrarTabla()" />
+            </div>
+            <div class="w3-col m6 s12 w3-right-align w3-margin-top-small">
+                @if (idSeleccionado > 0)
+                {
+                    <a href="@Url.Action("ExportarAsistenciaExcel", "Inscripcion", new { idActividad = idSeleccionado })"
+                       class="w3-button w3-green w3-round">
+                        <i class="fa fa-file-excel-o w3-margin-right"></i>Exportar a Excel
+                    </a>
+                }
+            </div>
+        </div>
+        <div class="w3-responsive">
+            <table class="w3-table-all w3-hoverable" id="tablaAsistencia">
+                <thead>
+                    <tr class="w3-light-grey">
+                        <th>Estatus</th>
+                        <th>RFC</th>
+                        <th>Nombre del Asistente</th>
+                        <th>CCT / Escuela</th>
+                        <th>Fecha Acreditación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @if (item.HaAsistido)
+                                    {
+                                        <span class="w3-tag w3-green w3-round"><i class="fa fa-check w3-margin-right"></i>Asistió</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="w3-tag w3-amber w3-round w3-text-white"><i class="fa fa-clock-o w3-margin-right"></i>Pendiente</span>
+                                    }
+                        </td>
+                        <td><code class="w3-bold">@item.Rfc</code></td>
+                        <td><strong>@item.NombreCompleto</strong></td>
+                        <td><span class="w3-small">@item.Escuela</span></td>
+                        <td>
+                            @(item.FechaAsistencia.HasValue
+                                                        ? item.FechaAsistencia.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                                                        : "-")
+                        </td>
+                    </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="w3-center w3-padding-24 w3-text-grey">
+                                <i class="fa fa-info-circle w3-large"></i> No hay participantes registrados para este evento.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filtrarTabla() {
+            var input = document.getElementById("busquedaTabla");
+            var filter = input.value.toUpperCase();
+            var table = document.getElementById("tablaAsistencia");
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) {
+                var txtValue = tr[i].textContent || tr[i].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+}
